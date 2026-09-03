@@ -172,3 +172,40 @@ def make_regression_md(n=200, d=4, seed=0, noise=2.0):
     b_true = 1.5
     y = X @ w_true + b_true + rng.normal(0, noise, size=n)
     return X, y, w_true, b_true
+
+
+# =====================================================================
+# Classification datasets for the Session 04 (logistic regression) notebooks.
+# Labels are drawn from a KNOWN logistic model y ~ Bernoulli(sigma(w.x + b)), so a
+# from-scratch fit can be checked against the coefficients that generated the data
+# (with enough samples, the maximum-likelihood fit is close to the truth).
+# =====================================================================
+def _sigmoid(z):
+    """Numerically stable logistic sigmoid, elementwise."""
+    z = np.asarray(z, dtype=float)
+    out = np.empty_like(z)
+    pos, neg = z >= 0, z < 0
+    out[pos] = 1.0 / (1.0 + np.exp(-z[pos]))
+    ez = np.exp(z[neg])
+    out[neg] = ez / (1.0 + ez)
+    return out
+
+
+def make_logistic_1d(n=60, seed=0, w=1.6, b=-0.4, xspan=(-5.0, 5.0)):
+    """One feature, two classes: labels y ~ Bernoulli(sigma(w*x + b)). Returns
+    (x, y, w, b); the decision boundary sits at the point x* = -b/w."""
+    rng = np.random.default_rng(seed)
+    x = np.sort(rng.uniform(xspan[0], xspan[1], n))
+    y = (rng.random(n) < _sigmoid(w * x + b)).astype(int)
+    return x, y, float(w), float(b)
+
+
+def make_logistic_2d(n=200, seed=0, w=(1.6, -2.2), b=0.5, scale=1.6):
+    """Two features, two classes: labels y ~ Bernoulli(sigma(X @ w + b)) with
+    X ~ N(0, scale). Returns (X, y, w_true, b_true); the decision boundary is the
+    line w[0]*x1 + w[1]*x2 + b = 0."""
+    rng = np.random.default_rng(seed)
+    X = rng.normal(0.0, scale, size=(n, 2))
+    w_true = np.asarray(w, dtype=float)
+    y = (rng.random(n) < _sigmoid(X @ w_true + b)).astype(int)
+    return X, y, w_true, float(b)
