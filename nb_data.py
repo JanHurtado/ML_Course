@@ -209,3 +209,63 @@ def make_logistic_2d(n=200, seed=0, w=(1.6, -2.2), b=0.5, scale=1.6):
     w_true = np.asarray(w, dtype=float)
     y = (rng.random(n) < _sigmoid(X @ w_true + b)).astype(int)
     return X, y, w_true, float(b)
+
+
+# =====================================================================
+# Generative datasets for the Session 05 notebooks (continuous features).
+# The generator returns the TRUE parameters it used, so a from-scratch fit
+# can be checked against the truth as well as against scikit-learn.
+# =====================================================================
+def make_gaussian_classes(n=400, seed=0, mus=((-1.4, 0.0), (1.6, 0.4)),
+                          covs=None, priors=None):
+    """K multivariate-Gaussian classes with KNOWN parameters.
+
+    ``covs`` may be omitted (identity), a single (d, d) matrix (shared by every
+    class -- the LDA assumption), or one (d, d) matrix per class (the QDA case).
+    Returns ``(X, y, params)`` with ``params = {"mus", "covs", "priors"}``.
+    """
+    rng = np.random.default_rng(seed)
+    mus = np.asarray(mus, dtype=float)
+    K, d = mus.shape
+    covs = np.eye(d) if covs is None else np.asarray(covs, dtype=float)
+    if covs.ndim == 2:                          # one covariance shared by all classes
+        covs = np.stack([covs] * K)
+    priors = np.full(K, 1.0 / K) if priors is None else np.asarray(priors, dtype=float)
+
+    y = rng.choice(K, size=n, p=priors)
+    X = np.empty((n, d))
+    for k in range(K):
+        mask = y == k
+        X[mask] = rng.multivariate_normal(mus[k], covs[k], size=int(mask.sum()))
+    return X, y, {"mus": mus, "covs": covs, "priors": priors}
+
+
+# =====================================================================
+# Datasets for the Session 06/07 notebooks (SVMs and kernel methods).
+# Labels are in {-1, +1}: the SVM convention, where y * f(x) > 0 means
+# "classified correctly" for either class.
+# =====================================================================
+def make_two_blobs(n=200, sep=1.6, spread=1.0, seed=0):
+    """Two round Gaussian clouds centered at (-sep, 0) and (+sep, 0), labels in {-1, +1}.
+
+    A large ``sep`` gives separable data (a hard margin exists); a small one gives
+    overlapping classes that need the soft margin.
+    """
+    rng = np.random.default_rng(seed)
+    y = np.where(rng.random(n) < 0.5, -1, 1)
+    X = rng.normal(0.0, spread, size=(n, 2))
+    X[:, 0] += sep * y
+    return X, y
+
+
+def make_rings(n=200, inner=(0.0, 1.0), outer=(1.7, 2.4), seed=0):
+    """Two concentric rings, labels -1 (inner) and +1 (outer): no straight line separates them.
+
+    Matches Lecture 06's quadratic-map figure (radii uniform in ``inner`` / ``outer``).
+    The first half of the rows is the inner ring, the second half the outer one.
+    """
+    rng = np.random.default_rng(seed)
+    y = np.where(np.arange(n) < n // 2, -1, 1)
+    r = np.where(y < 0, rng.uniform(*inner, n), rng.uniform(*outer, n))
+    t = rng.uniform(0, 2 * np.pi, n)
+    return np.column_stack([r * np.cos(t), r * np.sin(t)]), y

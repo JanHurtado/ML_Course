@@ -21,7 +21,7 @@ Cells marked `# <-- CHANGE ME` are meant to be edited and re-run.
 | File | What it provides |
 | --- | --- |
 | `nb_utils.py` | `use_style("notes"\|"slides")` &mdash; a clean, colorblind-safe matplotlib look matching the lecture figures. |
-| `nb_data.py` | `make_apartments(messy=…)` / `basic_clean(…)` &mdash; the synthetic *apartments &rarr; rent* table used across Session&nbsp;01; `make_regression_1d`, `make_wave`, and `make_regression_md` (linear/nonlinear/multivariate targets with **known** coefficients) for Session&nbsp;02; and `make_logistic_1d` / `make_logistic_2d` (two-class labels from a **known** logistic model) for Session&nbsp;04. |
+| `nb_data.py` | `make_apartments(messy=…)` / `basic_clean(…)` &mdash; the synthetic *apartments &rarr; rent* table used across Session&nbsp;01; `make_regression_1d`, `make_wave`, and `make_regression_md` (linear/nonlinear/multivariate targets with **known** coefficients) for Session&nbsp;02; `make_logistic_1d` / `make_logistic_2d` (two-class labels from a **known** logistic model) for Session&nbsp;04; and `make_gaussian_classes` (Gaussian classes with **known** parameters) for Session&nbsp;05; and `make_two_blobs`, `make_rings` (labels in $\{-1,+1\}$) for Sessions&nbsp;06&ndash;07. |
 
 ## Session 01 &mdash; Introduction (practical series)
 
@@ -91,8 +91,42 @@ generalization to many classes &mdash; each step checked against scikit-learn, m
 against scikit-learn (and, where possible, against the coefficients that generated the data),
 continuing the Session&nbsp;02/03 style.
 
-## Sessions 05&ndash;14
+## Session 05 &mdash; Generative & Probabilistic Models (practical series)
+
+A three-notebook arc on **generative classifiers for continuous features**, built from scratch in
+NumPy and checked against scikit-learn, matching Lecture&nbsp;05. All three fit in **closed form**
+&mdash; no optimizer, no learning rate: a prior, a mean, and some form of covariance.
+
+| # | Notebook | Covers |
+| --- | --- | --- |
+| **05a** | [`session-05a-gaussian-naive-bayes.ipynb`](session-05a-gaussian-naive-bayes.ipynb) | The generative recipe (prior $\times$ likelihood); the **1-D Gaussian** per feature; the **naive** independence assumption and its upright ellipses; a from-scratch `GaussianNBScratch` matching sklearn's `GaussianNB` exactly (`var_smoothing` included); the curved decision boundary; a run on **wine**. |
+| **05b** | [`session-05b-lda-qda.ipynb`](session-05b-lda-qda.ipynb) | The **full covariance** (the tilt naive Bayes cannot have); fitting $\mu_k,\Sigma_k$ and the **pooled** $\Sigma$; the discriminant $\delta_k$; **QDA** (own $\Sigma_k$ &rarr; curved) and **LDA** (shared $\Sigma$ &rarr; straight, with $\mathbf{w}=\Sigma^{-1}(\mu_1-\mu_0)$), both matched to sklearn; the LDA posterior shown to be exactly a **sigmoid**; what the extra covariances cost. |
+| **05c** | [`session-05c-comparing-generative-models.ipynb`](session-05c-comparing-generative-models.ipynb) | The three boundaries side by side; how much **data** each needs in both regimes (different vs shared class shapes); **wine** and **breast-cancer** benchmarks with a logistic-regression reference; why QDA needs regularization at $d{=}30$; and a practical rule for choosing. |
+
+**Suggested order:** 05a &rarr; 05b &rarr; 05c. Everything is NumPy-first and validated against
+scikit-learn (and, where possible, against the parameters that generated the data), continuing the
+Session&nbsp;02/03/04 style.
+
+## Sessions 06&ndash;07 &mdash; Support Vector Machines & Kernel Methods (practical series)
+
+A three-notebook arc **shared by two lectures**, because the idea that ends Lecture&nbsp;06 &mdash; the
+dual touches the data only through inner products &mdash; is the idea that starts Lecture&nbsp;07.
+scikit-learn fits the larger models; the lectures' key claims are checked by hand in NumPy, and
+the SVM dual is solved from scratch with SciPy's general optimizer on small problems (no QP library
+needed).
+
+| # | Notebook | Covers |
+| --- | --- | --- |
+| **06a** | [`session-06a-margin-and-soft-margin.ipynb`](session-06a-margin-and-soft-margin.ipynb) | Lecture&nbsp;06's three-point example checked by hand; **functional vs geometric** margin and the scale freedom; **only support vectors matter** (far points leave `coef_` and `intercept_` identical bit for bit); the **soft margin**, its three slack cases and the **$C$** sweep; the **hinge loss** as loss&nbsp;+&nbsp;penalty, with sklearn's answer verified to minimize it; **scaling** on breast cancer. |
+| **06b** | [`session-06b-dual-and-kernel-trick.ipynb`](session-06b-dual-and-kernel-trick.ipynb) | The **dual solved from scratch** (SciPy SLSQP), recovering the lecture's $\alpha=(\tfrac12,\tfrac12,1)$ exactly; strong duality and $\sum_i\alpha_i=\lVert\mathbf{w}\rVert^2$; the three **KKT** cases; **sparsity** (refit on the support vectors only); rebuilding `decision_function` from `dual_coef_` for linear/RBF/polynomial kernels; an explicit **feature map** vs the **polynomial kernel**; the same solver turned into an **RBF SVM** by changing one line. |
+| **07** | [`session-07-kernels-in-practice.ipynb`](session-07-kernels-in-practice.ipynb) | **Valid kernels**: symmetric PSD Gram matrices tested by their eigenvalues, and two impostors that fail; the Gram matrix as a similarity map; the **kernel zoo** and the RBF's infinite feature map, truncated; **$\gamma$** as the complexity dial and a $(C,\gamma)$ cross-validation grid; **kernel ridge** in closed form $(K+\lambda I)^{-1}\mathbf{y}$, matched to sklearn and shown to equal ordinary ridge for a linear kernel; an honest **diabetes** comparison. |
+
+**Suggested order:** 06a &rarr; 06b &rarr; 07. Notebook 06b closes Session&nbsp;06 and opens
+Session&nbsp;07. Keep the from-scratch dual solver to $n\le200$ points &mdash; its cost grows roughly
+like $n^3$.
+
+## Sessions 08&ndash;14
 
 One notebook per lecture, named `session-NN-topic.ipynb`, each a hands-on companion to that
-lecture (generative models, SVMs, kernels, trees, ensembles, clustering, dimensionality
-reduction, neural networks, learning theory).
+lecture (trees, ensembles, clustering, dimensionality reduction, neural networks, learning
+theory).
