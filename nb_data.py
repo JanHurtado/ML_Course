@@ -269,3 +269,158 @@ def make_rings(n=200, inner=(0.0, 1.0), outer=(1.7, 2.4), seed=0):
     r = np.where(y < 0, rng.uniform(*inner, n), rng.uniform(*outer, n))
     t = rng.uniform(0, 2 * np.pi, n)
     return np.column_stack([r * np.cos(t), r * np.sin(t)]), y
+
+
+# =====================================================================
+# The course's two RUNNING TOY EXAMPLES, used by Lectures 08, 09, 10 and 12.
+#
+# Both are small enough to work out with pencil and paper, and every number
+# they produce is exact -- which is the point: a notebook can check scikit-learn
+# against arithmetic the reader did themselves. They recur across four lectures,
+# so the same ten points you split with a decision tree in Session 08 are the
+# ten points you cluster in Session 10.
+# =====================================================================
+def make_ten_points():
+    """Lecture 08's TEN example: 10 points, 2 integer features, 2 classes.
+
+    Returns ``(X, y)`` with ``X`` of shape (10, 2) and ``y`` in {0, 1}, five of
+    each. The exact facts this example was chosen for:
+
+    * the root Gini impurity is exactly 1/2 and the root entropy exactly 1 bit;
+    * the best root split is ``x1 <= 3.5``, with information gain exactly 3/14;
+    * splitting on ``x2`` at 2.5 or at 8.5 gives an information gain of exactly 0
+      -- two cuts that look reasonable and buy nothing;
+    * a fully grown tree reaches 10/10 training accuracy with four leaves.
+
+    Sessions 09 (boosting reuses the same three cuts) and 10 (DBSCAN on the same
+    points) build on it.
+    """
+    class0 = [(1, 4), (2, 1), (3, 9), (6, 5), (8, 3)]
+    class1 = [(4, 8), (5, 10), (7, 2), (9, 6), (10, 7)]
+    X = np.array(class0 + class1, dtype=float)
+    y = np.array([0] * 5 + [1] * 5)
+    return X, y
+
+
+def make_rent8():
+    """Lecture 08's RENT8 example: 8 apartments, area -> rent, for regression.
+
+    Returns ``(x, y)`` with ``x`` = 1..8 (area, in tens of m^2) and ``y`` the rent
+    in hundreds of EUR. Exact by construction:
+
+    * the best constant prediction is the mean 7.5, with SSE exactly 138;
+    * the best single split is ``area <= 4.5``, leaving SSE exactly 10 -- so that
+      one cut is worth a gain of exactly 128;
+    * k-means with K=2 on the rents alone finds centers 3.5 and 11.5 with WCSS 10,
+      the *same* 10 (Session 10's bridge back to Session 08).
+
+    ``x`` is returned 1-D; reshape to ``x[:, None]`` for scikit-learn.
+    """
+    x = np.arange(1, 9, dtype=float)
+    y = np.array([2, 3, 4, 5, 10, 11, 12, 13], dtype=float)
+    return x, y
+
+
+def make_xor():
+    """The four corners of the XOR problem -- Lecture 12's wall.
+
+    Returns ``(X, y)`` with ``X`` the corners (0,0), (0,1), (1,0), (1,1) and
+    ``y = x1 XOR x2``. No single neuron (no affine function of the inputs) can
+    separate these four points, and the one-line reason is an identity you can
+    check by hand: for *any* affine f,
+
+        f(0,0) + f(1,1) = f(0,1) + f(1,0),
+
+    so the two diagonals always agree -- while XOR demands they disagree.
+    """
+    X = np.array([[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]])
+    y = np.array([0, 1, 1, 0])
+    return X, y
+
+
+def make_cigars(n=300, spread=10.0, gap=1.6, thin=0.35, seed=11):
+    """Two long, parallel class clouds -- Lecture 11's PCA-vs-LDA example.
+
+    Returns ``(X, y)`` with ``n`` points *per class* (so 600 rows by default).
+    The classes are stretched along ``x1`` (standard deviation ``spread``) and
+    separated along ``x2`` by ``gap``, so the direction carrying almost all the
+    *variance* is orthogonal to the direction carrying all the *class
+    information*. Unsupervised PCA therefore keeps the useless axis and throws
+    the useful one away, while LDA -- which sees the labels -- does the opposite.
+
+    With the defaults (the lecture's own settings) PC1 holds **99.24%** of the
+    variance and separates the classes at **0.5417** -- chance -- while LDA's
+    single component reaches **0.9867**. Measure the accuracies with
+    ``best_1d_threshold_accuracy`` rather than by fitting a classifier, so the
+    number describes the *projection* and not whatever model comes after it.
+    """
+    rng = np.random.default_rng(seed)
+    c0 = np.c_[rng.normal(0.0, spread, n), rng.normal(-gap / 2.0, thin, n)]
+    c1 = np.c_[rng.normal(0.0, spread, n), rng.normal(+gap / 2.0, thin, n)]
+    return np.vstack([c0, c1]), np.array([0] * n + [1] * n)
+
+
+def make_ellipses3(seed=0):
+    """Three long, differently ORIENTED Gaussian ellipses, 200 points each.
+
+    The clustering dataset on which a round model and an elliptical one genuinely
+    part company: k-means cannot express a tilted, stretched cluster and a
+    full-covariance Gaussian mixture can. Matches Lecture 10's figure.
+
+    Returns ``(X, y)`` with ``y`` the component that generated each point -- for
+    *scoring* only, never for fitting.
+    """
+    rng = np.random.default_rng(seed)
+    base = rng.normal(size=(600, 2)) * np.array([3.0, 0.4])      # long and thin
+    out, lab = [], []
+    for k, (deg, cx, cy) in enumerate(((0, 0.0, 0.0), (60, 4.0, 0.0), (-60, 2.0, 3.5))):
+        t = np.deg2rad(deg)
+        R = np.array([[np.cos(t), -np.sin(t)], [np.sin(t), np.cos(t)]])
+        out.append(base[k * 200:(k + 1) * 200] @ R.T + np.array([cx, cy]))
+        lab.append(np.full(200, k))
+    return np.vstack(out), np.concatenate(lab)
+
+
+def make_uneven_clusters(n_per=200, d=20, radii=(1.0, 5.0, 25.0),
+                         gaps=(60.0, 300.0), seed=0):
+    """Isotropic Gaussian clusters strung along the first axis, with KNOWN sizes and gaps.
+
+    ``radii[k]`` is the per-coordinate standard deviation of cluster ``k``, and
+    ``gaps[k]`` is the distance between the centers of clusters ``k`` and ``k+1``.
+    Both the SIZE ratios and the GAP ratios are therefore known before any
+    embedding is computed -- which is what makes them worth measuring again in a
+    t-SNE or UMAP map, where they come back as 1.
+
+    Returns ``(X, y)`` with ``X`` of shape ``(n_per * len(radii), d)``. The
+    defaults are Lecture 11's experiment: radii 1 : 5 : 25 and gaps 1 : 5, which
+    the data reproduces as a measured 24.8x size ratio and 5.0x gap ratio.
+    """
+    rng = np.random.default_rng(seed)
+    centers = np.zeros((len(radii), d))
+    centers[1:, 0] = np.cumsum(np.asarray(gaps, dtype=float))
+    X = np.vstack([rng.normal(0.0, r, (n_per, d)) + c
+                   for r, c in zip(radii, centers)])
+    return X, np.repeat(np.arange(len(radii)), n_per)
+
+
+def best_1d_threshold_accuracy(z, y):
+    """Best accuracy ANY single threshold on the 1-D score ``z`` can reach.
+
+    Used instead of fitting a classifier so the result measures the projection
+    itself, not the model trained on top of it. Runs in O(n log n).
+    """
+    z = np.asarray(z, dtype=float).ravel()
+    y = np.asarray(y).ravel()
+    order = np.argsort(z)
+    ys = y[order]
+    n = len(ys)
+    # the two constant predictors are always available
+    best = max((ys == 0).mean(), (ys == 1).mean())
+    left1 = np.cumsum(ys == 1)          # 1s at or left of each cut
+    total1 = int(left1[-1])
+    for i in range(n - 1):
+        nl = i + 1
+        # predict 0 left of the cut and 1 right of it, then the mirror image
+        correct = (nl - left1[i]) + (total1 - left1[i])
+        best = max(best, correct / n, (n - correct) / n)
+    return float(best)

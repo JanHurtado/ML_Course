@@ -4,6 +4,8 @@ Hands-on Jupyter companions to the lectures. The course is **practice-heavy**, s
 have one or more notebooks here. Every notebook is **self-contained and offline**: it imports
 two small sibling helpers and generates or uses only bundled data, so it runs top-to-bottom
 with no downloads (a few clearly-marked *optional* cells fetch real data over the network).
+The exception is the [`practical/`](practical/README.md) subfolder: its case studies work on real
+datasets, which they download once and cache (see the last section).
 
 ## Running them
 
@@ -13,15 +15,16 @@ jupyter lab            # or: jupyter notebook
 ```
 
 Requirements: `numpy`, `pandas`, `matplotlib`, `scikit-learn`, `scipy` (all standard). Outputs
-are committed **cleared** &mdash; run the cells (Shift+Enter) to produce the figures and tables.
-Cells marked `# <-- CHANGE ME` are meant to be edited and re-run.
+are committed **with the notebooks**, so every figure and table is visible on GitHub without
+running anything; re-run the cells (Shift+Enter) to reproduce them. Cells marked
+`# <-- CHANGE ME` are meant to be edited and re-run.
 
 ## Helper files (shared by the notebooks)
 
 | File | What it provides |
 | --- | --- |
 | `nb_utils.py` | `use_style("notes"\|"slides")` &mdash; a clean, colorblind-safe matplotlib look matching the lecture figures. |
-| `nb_data.py` | `make_apartments(messy=…)` / `basic_clean(…)` &mdash; the synthetic *apartments &rarr; rent* table used across Session&nbsp;01; `make_regression_1d`, `make_wave`, and `make_regression_md` (linear/nonlinear/multivariate targets with **known** coefficients) for Session&nbsp;02; `make_logistic_1d` / `make_logistic_2d` (two-class labels from a **known** logistic model) for Session&nbsp;04; and `make_gaussian_classes` (Gaussian classes with **known** parameters) for Session&nbsp;05; and `make_two_blobs`, `make_rings` (labels in $\{-1,+1\}$) for Sessions&nbsp;06&ndash;07. |
+| `nb_data.py` | `make_apartments(messy=…)` / `basic_clean(…)` &mdash; the synthetic *apartments &rarr; rent* table used across Session&nbsp;01; `make_regression_1d`, `make_wave`, and `make_regression_md` (linear/nonlinear/multivariate targets with **known** coefficients) for Session&nbsp;02; `make_logistic_1d` / `make_logistic_2d` (two-class labels from a **known** logistic model) for Session&nbsp;04; and `make_gaussian_classes` (Gaussian classes with **known** parameters) for Session&nbsp;05; and `make_two_blobs`, `make_rings` (labels in $\{-1,+1\}$) for Sessions&nbsp;06&ndash;07. For Sessions&nbsp;08&ndash;13 it also carries the course's **running toy examples**, small enough to check with pencil and paper: `make_ten_points` (10 integer points &mdash; root Gini exactly $1/2$, best split $x_1\le3.5$ with gain exactly $3/14$) and `make_rent8` (8 apartments &mdash; mean $7.5$, SSE $138$, best split SSE $10$), both reused across 08/09/10/12; `make_xor` (the four corners); `make_ellipses3` (three tilted Gaussians, where round and elliptical models part company); `make_cigars` with `best_1d_threshold_accuracy` (PC1 keeps $99.24\%$ of the variance and classifies at chance, $0.5417$, where LDA reaches $0.9867$); and `make_uneven_clusters` (known cluster sizes and gaps, $24.8\times$ and $5.0\times$, for the t-SNE/UMAP warnings). |
 
 ## Session 01 &mdash; Introduction (practical series)
 
@@ -125,8 +128,56 @@ needed).
 Session&nbsp;07. Keep the from-scratch dual solver to $n\le200$ points &mdash; its cost grows roughly
 like $n^3$.
 
-## Sessions 08&ndash;14
+## Sessions 08&ndash;13 &mdash; trees to deep networks (practical series)
 
-One notebook per lecture, named `session-NN-topic.ipynb`, each a hands-on companion to that
-lecture (trees, ensembles, clustering, dimensionality reduction, neural networks, learning
-theory).
+Ten notebooks across six lectures. These are **scikit-learn-first**: the estimator is always
+sklearn's, and NumPy is used only where writing the thing out is what teaches it &mdash; an
+impurity, one EM iteration, one AdaBoost weight update, one backprop pass &mdash; and every
+from-scratch piece is then checked against sklearn in the same cell.
+
+Two rules run through all ten, and they are worth knowing before you read:
+
+* **A number appears in the prose only if a cell computes it.** Where these notebooks quote the
+  lecture, they recompute it.
+* **No general claim rests on one seed or one train/test split.** Anything that would be a coin
+  flip measured once is measured over 10&ndash;40 repeats and reported with its spread &mdash; and
+  where the effect does not resolve at that sample size, the notebook says so instead of
+  claiming it. (Session&nbsp;13's weight-decay section is the clearest example: the honest answer
+  is *we cannot detect it here*.)
+
+| # | Notebook | Covers |
+| --- | --- | --- |
+| **08** | [`session-08-decision-trees.ipynb`](session-08-decision-trees.ipynb) | A tree as rules and as boxes; **impurity as the cost of the best constant**; Gini/entropy/information gain by hand, matched to sklearn's own `tree_.impurity`; the $n-1$ candidate thresholds and why trees need no scaling; **greedy is short-sighted** &mdash; the XOR failure where every root gain is exactly $0$; size as the complexity knob; regression trees; **cost-complexity pruning** (the ten-point path by hand, then `ccp_alpha` by CV); MDI and what it does not mean; and the **instability** that motivates Session&nbsp;09. |
+| **09a** | [`session-09a-bagging-and-random-forests.ipynb`](session-09a-bagging-and-random-forests.ipynb) | Condorcet's two conditions, counted; the bootstrap and its $63.2\%/36.8\%$ split, derived *and* measured; $\operatorname{Var}=\rho\sigma^2+\frac{1-\rho}{B}\sigma^2$ with $\sigma^2$ and $\rho$ **measured on real ensemble members**, so the **correlation floor** is visible; the stable model bagging does nothing for; **out-of-bag** error as a free validation set; random forests &mdash; paying for diversity by making each member worse; and **how MDI lies**, with permutation importance as the partial fix. |
+| **09b** | [`session-09b-boosting.ipynb`](session-09b-boosting.ipynb) | Fitting the next model to the last one's mistakes; gradient boosting as descent in function space (SSE $138\to42\to18\to9.9$, below what any single stump reaches) matched to sklearn exactly; **AdaBoost's weights printed round by round**, landing on Session&nbsp;08's own three cuts; where the weight goes when a label is simply wrong; **$\nu$ and $M$ are one knob with two hands on it**; early stopping; **`max_depth` is the interaction order** (a sum of stumps is additive to machine precision, so XOR sits at chance); and an honest forest-vs-boosting bake-off. |
+| **10a** | [`session-10a-kmeans-and-mixtures.ipynb`](session-10a-kmeans-and-mixtures.ipynb) | How you score a clustering at all (ARI, and why it is not an accuracy); **Lloyd's algorithm by hand** on Session&nbsp;08's eight rents &mdash; landing on WCSS $10$, the *same* $10$ as that lecture's best split; the identity $\mathrm{TSS}=\mathrm{WCSS}+\mathrm{BCSS}$; local minima and what `n_init` is for; the three ways to break k-means' assumptions; Gaussian mixtures and what each `covariance_type` costs; one **EM iteration by hand**; and **k-means as EM hardened** &mdash; the zero-variance limit, agreeing to the last digit. |
+| **10b** | [`session-10b-density-hierarchy-and-spectral.ipynb`](session-10b-density-hierarchy-and-spectral.ipynb) | **DBSCAN** &mdash; core/border/noise counted by hand on the ten points, then `eps` from a k-distance plot; the shapes k-means cannot reach; why "no $K$" is half true; **hierarchical clustering** and the dendrogram; **the linkage *is* the model** (single linkage recovers the moons; Ward fails exactly as k-means does); **spectral clustering**, whose affinity *is* Session&nbsp;07's RBF Gram matrix &mdash; the Laplacian, the Fiedler vector, and the honest finding that **$\gamma$ is a window** that fails on both sides, with sklearn's default $\gamma=1$ no better than k-means; and choosing $K$ by elbow/silhouette/BIC **including where each one is wrong**. |
+| **11a** | [`session-11a-pca-lda-and-factorizations.ipynb`](session-11a-pca-lda-and-factorizations.ipynb) | The linear methods, on one thread: **variance is not always the question you are asking**. The curse of dimensionality; all of PCA on four points; the max-variance and min-reconstruction views shown to be one answer; choosing $k$; standardizing changes the answer. Then the three breaks &mdash; **labels** (PC1 keeps $99.24\%$ of the variance and classifies at chance, $0.5417$, where LDA reaches $0.9867$; and LDA's two walls); **per-feature noise** (rescale one feature and PCA's direction swings where factor analysis's does not &mdash; and what the rotation costs); and **negativity** (why non-negativity turns a basis into parts). |
+| **11b** | [`session-11b-tsne-and-umap.ipynb`](session-11b-tsne-and-umap.ipynb) | When a flat projection is not enough; **kernel PCA** &mdash; the same Gram matrix, a different job; **t-SNE** in depth: one knob and $n$ bandwidths, what perplexity controls, why the map kernel is Student-$t$ (crowding); **the warning that actually misleads people** &mdash; cluster sizes *and* between-cluster gaps both come back as $1$, measured; run-to-run variability and no `transform` for new points; then **UMAP**, implemented here in NumPy because `umap-learn` is not installed (the fitted $a=1.5769$, $b=0.8951$ against the package's published $1.577$, $0.895$), its two knobs, and which one can change your conclusions; and **ICA**, one relative that is not about pictures. |
+| **12a** | [`session-12a-from-neuron-to-hidden-layer.ipynb`](session-12a-from-neuron-to-hidden-layer.ipynb) | **You already own a neuron** &mdash; it is Session&nbsp;04's logistic regression, agreeing to within one ulp. Then XOR and a wall you cannot train through, via the one-line **diagonal identity** $f(0,0)+f(1,1)=f(0,1)+f(1,0)$ and a $274{,}625$-neuron grid search that finds nothing; **two exact ways through** (OR/NAND/AND with step units, and an all-integer ReLU net); **what the hidden layer actually did** &mdash; it moves the points, not the boundary; the layer rule, the shapes, and counting parameters against a fitted `MLPClassifier`; and why the bend is not optional ($105$ parameters collapsing to $3$). |
+| **12b** | [`session-12b-what-a-network-learns.ipynb`](session-12b-what-a-network-learns.ipynb) | **Universal approximation as a construction, not an incantation**: two sigmoid units make a bump, $H$ bumps take $2H$ units, and the error *halves when the width doubles*; the theorem stated properly &mdash; and **what it does not promise** (existence is not attainment); **depth against width** by folding a tent, $2L$ units giving $2^L$ pieces; activations and **the number $0.25$**; softmax, cross-entropy and the $\hat y-y$ cancellation; the **seed lottery** on a solution we can write down (standardizing the inputs buys more than width); **backpropagation by hand in integers**, checked against finite differences; and one step, handed off to Session&nbsp;13. |
+| **13** | [`session-13-neural-networks-training.ipynb`](session-13-neural-networks-training.ipynb) | **It is all the condition number.** The learning rate on a problem you can do in your head (the threshold $2/\text{curvature}$, derived); conditioning; **momentum and the floor nobody mentions** &mdash; the exact $\sqrt\beta$ rate, so $\beta=0.9$ beats plain descent only when $\kappa>37.97$; **Adam, and why the bias correction is not bookkeeping**; where you start &mdash; the variance argument, and zero vs constant init as two *different* failures; standardizing the inputs; then regularization measured honestly over many splits &mdash; weight decay (**which does not resolve at this sample size, and the notebook says so**), early stopping, and dropout's weight-scaling rule as an approximation, not an identity. |
+
+**Suggested order:** 08 &rarr; 09a &rarr; 09b &rarr; 10a &rarr; 10b &rarr; 11a &rarr; 11b &rarr;
+12a &rarr; 12b &rarr; 13. The chain is deliberate: 08 ends on the instability that 09a cures,
+09b's stumps cannot represent XOR and 12a proves why, 10a's k-means lands on the *same* number as
+08's best split, 10b's spectral affinity is 07's Gram matrix, and 12b hands its gradient step
+straight to 13.
+
+## Session 14
+
+[`session-14-learning-theory.ipynb`](session-14-learning-theory.ipynb) is still an **outline**
+&mdash; section headings and short cells, committed without outputs, unlike the 33 notebooks
+above.
+
+## Practical notebooks &mdash; real data, real decisions
+
+Case studies that are not tied to one lecture live in [`practical/`](practical/README.md). Each one
+puts several methods side by side on a **real** dataset and goes through the decisions of a real
+project: cleaning, encoding, honest evaluation, choosing a metric and a threshold, and deciding what
+to deploy. They import `nb_utils.py` from this folder and download their data once from the UCI
+repository (cached in `practical/data/raw/`, git-ignored, checked against SHA-256 fingerprints).
+
+| # | Notebook | Covers |
+| --- | --- | --- |
+| **01** | [`practical/01-comparing-classifiers.ipynb`](practical/01-comparing-classifiers.ipynb) | **Logistic regression, naive Bayes, SVMs and a decision tree** on the UCI *Adult* census table (48,842 people), with no ensembles and no high-level scikit-learn tools: cleaning a real file, preprocessing and cross-validation written by hand, the likelihood that makes or breaks naive Bayes, one look at the test file with its uncertainty, thresholds, calibration and Platt scaling, double counting, learning curves that reverse the ranking, and a recommendation for a concrete use case. |
